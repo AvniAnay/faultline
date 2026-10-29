@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --color-sev-critical: #b91c1c;
+  --color-sev-high: #c2410c;
+  --color-sev-medium: #eab308;
+  --color-sev-low: #0369a1;
+  --color-ok: #15803d;
+  --color-accent: #4338ca;
+  --color-surface: #ffffff;
+  --color-page: #f4f5f7;
+  --color-muted: #eceef2;
+  --color-line: #cfd3dc;
+  --color-fg: #1a1d24;
+  --color-fg-soft: #4b5262;
+}
+
+body {
+  background-color: var(--color-page);
+  color: var(--color-fg);
+}

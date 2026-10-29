@@ -1,0 +1,96 @@
+<p class="mb-3 text-sm"><a routerLink="/errors" class="text-accent underline">&larr; Back to errors</a></p>
+
+@if (store.error(); as err) {
+  <p class="rounded border border-sev-critical p-3 text-sm" role="alert">Failed to load error: {{ err }}</p>
+} @else if (store.detail(); as d) {
+  <h1 class="mb-2 text-xl font-semibold">Error detail</h1>
+  <p class="mb-3 rounded bg-surface p-3 font-mono text-sm break-words whitespace-pre-wrap ring-1 ring-line">{{ d.template }}</p>
+
+  <dl class="mb-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+    <div><dt class="text-fg-soft">Service</dt><dd>{{ d.service }}</dd></div>
+    <div><dt class="text-fg-soft">Level</dt><dd>{{ d.level }}</dd></div>
+    <div><dt class="text-fg-soft">Status</dt><dd><ui-badge>{{ d.status }}</ui-badge></dd></div>
+    <div><dt class="text-fg-soft">Severity</dt><dd>@if (d.severity) { <ui-badge [tone]="d.severity">{{ d.severity }}</ui-badge> } @else { Unrated }</dd></div>
+    <div><dt class="text-fg-soft">Category</dt><dd>{{ d.category ?? '-' }}</dd></div>
+    <div><dt class="text-fg-soft">Total count</dt><dd>{{ d.total_count }}</dd></div>
+    <div><dt class="text-fg-soft">First seen</dt><dd>{{ d.first_seen | date: 'medium' }}</dd></div>
+    <div><dt class="text-fg-soft">Last seen</dt><dd>{{ d.last_seen | date: 'medium' }}</dd></div>
+    <div><dt class="text-fg-soft">Latest flags</dt><dd>
+      @for (f of d.latest_flags; track f) { <ui-badge>{{ f }}</ui-badge> } @empty { none }
+    </dd></div>
+  </dl>
+
+  <section class="mb-6" aria-labelledby="occ-h">
+    <h2 id="occ-h" class="mb-2 text-lg font-semibold">Occurrences (last 48 hours, hourly)</h2>
+    <div class="rounded bg-surface p-2 ring-1 ring-line">
+      <ui-chart [option]="chartOption()" label="Occurrences per hour over the last 48 hours" />
+    </div>
+  </section>
+
+  @if (d.pending_review_item; as item) {
+    <section class="mb-6" aria-labelledby="pend-h">
+      <h2 id="pend-h" class="mb-2 text-lg font-semibold">Pending review</h2>
+      <app-review-item [item]="item" [showTemplate]="false" [busy]="store.busy()" (decide)="store.decide(item.id, $event)" />
+    </section>
+  }
+
+  <section class="mb-6" aria-labelledby="res-h">
+    <h2 id="res-h" class="mb-2 text-lg font-semibold">Resolutions</h2>
+    @for (r of d.resolutions; track r.id) {
+      <article class="mb-3 rounded bg-surface p-4 text-sm ring-1 ring-line">
+        <div class="mb-1 flex flex-wrap gap-2">
+          <ui-badge>{{ r.status }}</ui-badge>
+          <ui-badge>{{ r.confidence }} confidence</ui-badge>
+          <ui-badge>origin: {{ r.origin }}</ui-badge>
+        </div>
+        <p class="font-medium">{{ r.summary }}</p>
+        <p class="mt-1"><strong>Probable cause:</strong> {{ r.probable_cause }}</p>
+        @if (r.steps.length) {
+          <ol class="mt-1 list-decimal pl-5">@for (s of r.steps; track $index) { <li>{{ s }}</li> }</ol>
+        }
+        @if (r.sources.length) {
+          <ul class="mt-1 list-disc pl-5">
+            @for (s of r.sources; track s) {
+              <li><a [href]="s" target="_blank" rel="noopener noreferrer" class="text-accent underline break-all">{{ s }}</a></li>
+            }
+          </ul>
+        }
+        @if (r.approved_at) {
+          <p class="mt-1 text-xs text-fg-soft">Approved by {{ r.approved_by?.display_name ?? r.approved_by?.email ?? 'unknown' }} on {{ r.approved_at | date: 'medium' }}</p>
+        }
+      </article>
+    } @empty {
+      <p class="text-sm text-fg-soft">No resolutions yet.</p>
+    }
+  </section>
+
+  <section class="mb-6" aria-labelledby="samp-h">
+    <h2 id="samp-h" class="mb-2 text-lg font-semibold">Samples (redacted)</h2>
+    @for (s of d.samples; track $index) {
+      <div class="mb-2">
+        <p class="text-xs text-fg-soft">{{ s.seen_at | date: 'medium' }}</p>
+        <pre class="overflow-x-auto rounded bg-surface p-2 font-mono text-xs whitespace-pre-wrap ring-1 ring-line">{{ s.redacted_text }}</pre>
+      </div>
+    } @empty {
+      <p class="text-sm text-fg-soft">No samples.</p>
+    }
+  </section>
+
+  <section aria-labelledby="hist-h">
+    <h2 id="hist-h" class="mb-2 text-lg font-semibold">Review history</h2>
+    <ul class="grid gap-2 text-sm">
+      @for (h of d.review_history; track h.review_item_id) {
+        <li class="rounded bg-surface p-3 ring-1 ring-line">
+          <ui-badge>{{ h.decision }}</ui-badge>
+          by {{ h.reviewer?.display_name ?? h.reviewer?.email ?? 'nobody yet' }}
+          @if (h.decided_at) { on {{ h.decided_at | date: 'medium' }} }
+          @if (h.comment) { &mdash; &ldquo;{{ h.comment }}&rdquo; }
+        </li>
+      } @empty {
+        <li class="text-fg-soft">No review history.</li>
+      }
+    </ul>
+  </section>
+} @else {
+  <p>Loading...</p>
+}

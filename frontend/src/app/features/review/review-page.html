@@ -1,0 +1,44 @@
+<h1 class="mb-4 text-xl font-semibold">Review queue</h1>
+
+@if (store.error(); as err) {
+  <p class="mb-3 rounded border border-sev-critical p-3 text-sm" role="alert">Failed to load reviews: {{ err }}</p>
+}
+@if (store.loading() && store.groups().length === 0) {
+  <p>Loading...</p>
+} @else if (store.groups().length === 0 && !store.error()) {
+  <p class="text-fg-soft">Nothing is waiting for review.</p>
+}
+
+@for (g of store.groups(); track g.run.id) {
+  <section class="mb-8" [attr.aria-label]="'Run ' + g.run.id">
+    <div class="mb-3 flex flex-wrap items-center gap-3">
+      <h2 class="text-lg font-semibold">Run window {{ g.run.window_start | date: 'medium' }} &ndash; {{ g.run.window_end | date: 'medium' }}</h2>
+      <ui-badge>{{ g.run.status }}</ui-badge>
+      <span class="text-sm text-fg-soft">
+        {{ g.items.length }} items &middot; {{ count(g.items, 'pending') }} pending &middot; {{ count(g.items, 'approved') + count(g.items, 'edited') }} approved/edited &middot; {{ count(g.items, 'rejected') }} rejected
+      </span>
+      @if (auth.isAdmin()) {
+        <button uiButton variant="primary" class="ml-auto" [disabled]="hasPending(g.items)" (click)="askSubmit(g.run.id)">Submit review</button>
+      }
+    </div>
+    @if (auth.isAdmin() && hasPending(g.items)) {
+      <p class="mb-2 text-xs text-fg-soft">Decide every pending item to enable submitting.</p>
+    }
+    <div class="grid gap-4">
+      @for (it of g.items; track it.id) {
+        <div>
+          <a [routerLink]="['/errors', it.fingerprint_id]" class="mb-1 inline-block text-xs text-accent underline">Open error detail</a>
+          <app-review-item [item]="it" [busy]="store.busyIds().has(it.id)" (decide)="store.decide(it.id, $event)" />
+        </div>
+      }
+    </div>
+  </section>
+}
+
+<ui-dialog heading="Submit review?">
+  <p class="mb-4 text-sm">This finalizes all decisions for this run and resumes the workflow. It cannot be undone.</p>
+  <div class="flex justify-end gap-2">
+    <button uiButton (click)="dialog().close()">Cancel</button>
+    <button uiButton variant="primary" (click)="confirm()">Submit review</button>
+  </div>
+</ui-dialog>

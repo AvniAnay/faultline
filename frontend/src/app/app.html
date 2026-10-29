@@ -1,0 +1,17 @@
+<header class="border-b border-line bg-surface">
+  <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
+    <a routerLink="/errors" class="text-lg font-bold text-accent focus-visible:outline-2 focus-visible:outline-accent">Faultline</a>
+    <nav class="flex gap-4 text-sm" aria-label="Main">
+      <a routerLink="/errors" routerLinkActive="font-bold underline" class="hover:underline focus-visible:outline-2 focus-visible:outline-accent">Errors</a>
+      <a routerLink="/review" routerLinkActive="font-bold underline" class="hover:underline focus-visible:outline-2 focus-visible:outline-accent">Review</a>
+    </nav>
+    <div class="ml-auto flex items-center gap-3 text-sm">
+      <span>{{ auth.displayName() }} <span class="rounded bg-muted px-1.5 py-0.5 text-xs">{{ auth.roleLabel() }}</span></span>
+      <button uiButton (click)="auth.logout()">Log out</button>
+    </div>
+  </div>
+</header>
+<main class="mx-auto max-w-6xl px-4 py-6">
+  <router-outlet />
+</main>
+<ui-toast-outlet />

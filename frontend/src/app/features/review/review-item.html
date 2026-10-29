@@ -1,0 +1,103 @@
+@let it = item();
+@let p = it.proposed;
+<article class="rounded bg-surface p-4 ring-1 ring-line">
+  <header class="mb-2 flex flex-wrap items-center gap-2">
+    <ui-badge [tone]="current().severity">{{ current().severity }}</ui-badge>
+    <ui-badge>{{ current().category }}</ui-badge>
+    <span class="text-sm">{{ it.error.service }} &middot; {{ it.error.level }}</span>
+    @for (f of p.flags; track f) { <ui-badge>flag: {{ f }}</ui-badge> }
+    <span class="ml-auto text-sm">
+      Decision:
+      <ui-badge [tone]="it.decision === 'pending' ? 'neutral' : it.decision === 'rejected' ? 'high' : 'ok'">{{ it.decision }}</ui-badge>
+    </span>
+  </header>
+
+  @if (showTemplate()) {
+    <p class="mb-2 font-mono text-xs break-words whitespace-pre-wrap">{{ it.error.template }}</p>
+  }
+  <p class="mb-3 text-xs text-fg-soft">{{ p.window_count }} in this run window &middot; {{ it.error.total_count }} total &middot; last seen {{ it.error.last_seen | date: 'medium' }}</p>
+
+  <dl class="mb-3 grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[10rem_1fr]">
+    <dt class="font-semibold">Proposed category</dt>
+    <dd>{{ p.category }}<span class="text-fg-soft"> &mdash; {{ p.category_reason ?? 'no reason given' }}</span></dd>
+    <dt class="font-semibold">Proposed severity</dt>
+    <dd>{{ p.severity }}<span class="text-fg-soft"> &mdash; {{ p.severity_reason ?? 'no reason given' }}</span></dd>
+  </dl>
+
+  <section class="mb-3 rounded bg-muted p-3 text-sm" aria-label="Proposed resolution">
+    <h3 class="font-semibold">Proposed resolution
+      <ui-badge>{{ p.resolution.confidence }} confidence</ui-badge> <ui-badge>{{ p.resolution.origin }}</ui-badge>
+    </h3>
+    <p class="mt-1">{{ p.resolution.summary }}</p>
+    <p class="mt-1"><strong>Probable cause:</strong> {{ p.resolution.probable_cause }}</p>
+    @if (p.resolution.steps.length) {
+      <ol class="mt-1 list-decimal pl-5">
+        @for (s of p.resolution.steps; track $index) { <li>{{ s }}</li> }
+      </ol>
+    }
+    @if (p.resolution.sources.length) {
+      <ul class="mt-1 list-disc pl-5">
+        @for (s of p.resolution.sources; track s) {
+          <li><a [href]="s" target="_blank" rel="noopener noreferrer" class="text-accent underline break-all">{{ s }}</a></li>
+        }
+      </ul>
+    }
+  </section>
+
+  @if (it.edited) {
+    <p class="mb-3 text-sm"><strong>Edited values applied:</strong>
+      @if (it.edited.severity) { severity {{ it.edited.severity }}; }
+      @if (it.edited.category) { category {{ it.edited.category }}; }
+      @if (it.edited.resolution) { resolution text changed }
+    </p>
+  }
+  @if (it.decision !== 'pending') {
+    <p class="mb-3 text-xs text-fg-soft">
+      By {{ it.reviewer?.display_name ?? it.reviewer?.email ?? 'unknown' }}
+      @if (it.decided_at) { on {{ it.decided_at | date: 'medium' }} }
+      @if (it.comment) { &mdash; &ldquo;{{ it.comment }}&rdquo; }
+    </p>
+  }
+
+  @if (auth.isAdmin()) {
+    @if (editing()) {
+      <form class="grid gap-3 rounded border border-line p-3 text-sm">
+        <div class="flex flex-wrap gap-4">
+          <label class="grid gap-1">Severity
+            <select class="rounded border border-line bg-surface px-2 py-1" [value]="severity()" (change)="severity.set($any(val($event)))">
+              @for (s of severities; track s) { <option [value]="s" [selected]="s === severity()">{{ s }}</option> }
+            </select>
+          </label>
+          <label class="grid gap-1">Category
+            <select class="rounded border border-line bg-surface px-2 py-1" [value]="category()" (change)="category.set($any(val($event)))">
+              @for (c of categories; track c) { <option [value]="c" [selected]="c === category()">{{ c }}</option> }
+            </select>
+          </label>
+        </div>
+        <label class="grid gap-1">Resolution summary
+          <textarea rows="2" class="rounded border border-line bg-surface px-2 py-1" [value]="summary()" (input)="summary.set(val($event))"></textarea>
+        </label>
+        <label class="grid gap-1">Probable cause
+          <textarea rows="2" class="rounded border border-line bg-surface px-2 py-1" [value]="cause()" (input)="cause.set(val($event))"></textarea>
+        </label>
+        <label class="grid gap-1">Steps (one per line)
+          <textarea rows="4" class="rounded border border-line bg-surface px-2 py-1" [value]="steps()" (input)="steps.set(val($event))"></textarea>
+        </label>
+        <div class="flex gap-2">
+          <button uiButton variant="primary" [disabled]="busy()" (click)="saveEdit()">Save edit</button>
+          <button uiButton (click)="editing.set(false)">Cancel</button>
+        </div>
+      </form>
+    }
+    <div class="mt-3 grid gap-2 text-sm">
+      <label class="grid gap-1">Comment (optional)
+        <input type="text" class="rounded border border-line bg-surface px-2 py-1" [value]="comment()" (input)="comment.set(val($event))" />
+      </label>
+      <div class="flex flex-wrap gap-2">
+        <button uiButton variant="primary" [disabled]="busy()" (click)="send('approved')">Approve</button>
+        <button uiButton variant="danger" [disabled]="busy()" (click)="send('rejected')">Reject</button>
+        <button uiButton [disabled]="busy() || editing()" (click)="startEdit()">Edit</button>
+      </div>
+    </div>
+  }
+</article>

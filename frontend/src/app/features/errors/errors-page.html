@@ -1,0 +1,70 @@
+<div class="mb-4 flex flex-wrap items-center gap-4">
+  <h1 class="text-xl font-semibold">Errors</h1>
+  <label class="flex items-center gap-2 text-sm">
+    Status
+    <select class="rounded border border-line bg-surface px-2 py-1 focus-visible:outline-2 focus-visible:outline-accent" [value]="store.status()" (change)="onStatus($event)">
+      <option value="">All</option>
+      @for (s of statuses; track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
+  </label>
+  <div class="ml-auto flex items-center gap-3 text-sm">
+    @if (store.latestRun(); as run) {
+      <span aria-live="polite">Latest run: <ui-badge [tone]="run.status === 'completed' ? 'ok' : 'neutral'">{{ run.status }}</ui-badge>@if (run.status === 'running') { <span> (checking every 5 s)</span> }</span>
+    } @else {
+      <span>Latest run: none</span>
+    }
+    @if (auth.isAdmin()) {
+      <button uiButton variant="primary" [disabled]="store.triggering() || store.latestRun()?.status === 'running'" (click)="store.trigger()">Trigger run</button>
+    }
+  </div>
+</div>
+
+@if (store.error(); as err) {
+  <p class="mb-3 rounded border border-sev-critical p-3 text-sm" role="alert">Failed to load errors: {{ err }}</p>
+}
+
+<div class="overflow-x-auto rounded bg-surface ring-1 ring-line" [attr.aria-busy]="store.loading()">
+  <table class="w-full text-left text-sm">
+    <caption class="sr-only">Errors</caption>
+    <thead class="bg-muted text-xs uppercase">
+      <tr>
+        <th scope="col" class="p-2">Severity</th>
+        <th scope="col" class="p-2">Template</th>
+        <th scope="col" class="p-2">Service</th>
+        <th scope="col" class="p-2">Level</th>
+        <th scope="col" class="p-2">Category</th>
+        <th scope="col" class="p-2 text-right">Count</th>
+        <th scope="col" class="p-2">Last seen</th>
+        <th scope="col" class="p-2">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (e of store.data()?.items ?? []; track e.id) {
+        <tr class="cursor-pointer border-t border-line hover:bg-muted" (click)="open(e.id)">
+          <td class="p-2">
+            @if (e.severity) { <ui-badge [tone]="e.severity">{{ e.severity }}</ui-badge> } @else { <span class="text-fg-soft">Unrated</span> }
+          </td>
+          <td class="max-w-md p-2">
+            <a [href]="'/errors/' + e.id" class="block truncate font-mono text-xs hover:underline focus-visible:outline-2 focus-visible:outline-accent" [title]="e.template" (click)="$event.preventDefault(); $event.stopPropagation(); open(e.id)">{{ e.template }}</a>
+          </td>
+          <td class="p-2">{{ e.service }}</td>
+          <td class="p-2">{{ e.level }}</td>
+          <td class="p-2">{{ e.category ?? '-' }}</td>
+          <td class="p-2 text-right tabular-nums">{{ e.total_count }}</td>
+          <td class="p-2 whitespace-nowrap">{{ e.last_seen | date: 'medium' }}</td>
+          <td class="p-2"><ui-badge>{{ e.status }}</ui-badge></td>
+        </tr>
+      } @empty {
+        <tr><td colspan="8" class="p-4 text-center text-fg-soft">{{ store.loading() ? 'Loading...' : 'No errors found.' }}</td></tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (store.data(); as d) {
+  <div class="mt-3">
+    <ui-pager [page]="d.page" [pageSize]="d.page_size" [total]="d.total" (pageChange)="store.setPage($event)" />
+  </div>
+}
