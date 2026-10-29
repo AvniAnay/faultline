@@ -1,0 +1,18 @@
+{
+  "mappings": {
+    "properties": {
+      "@timestamp": { "type": "date" },
+      "message":    { "type": "text" },
+      "host":       { "properties": { "name": { "type": "keyword" } } },
+      "kubernetes": { "properties": {
+        "container": { "properties": { "name": { "type": "keyword" } } },
+        "pod":       { "properties": { "name": { "type": "keyword" } } }
+      } },
+      "faultline_test": { "properties": {
+        "template_id": { "type": "keyword" },
+        "level":       { "type": "keyword" },
+        "secrets":     { "type": "keyword" }
+      } }
+    }
+  }
+}

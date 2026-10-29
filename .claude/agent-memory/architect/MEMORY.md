@@ -1,0 +1,2 @@
+- [Faultline planning state](project_faultline_planning.md): tasks.md/api.md written 2026-09-23; G1-G46 review; recommended defaults pending approval
+- [Deliverable scope](feedback_deliverable_scope.md): only write requested files; spec.md untouched; no ADRs/architecture.md unless asked
