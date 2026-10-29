@@ -1,1 +1,0 @@
-- [Faultline backend conventions](faultline_backend.md) — Stage 1 layout, gotchas (Groq model, fixture aging, tests, docs/ off-limits)
